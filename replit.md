@@ -25,6 +25,23 @@ pnpm workspace monorepo using TypeScript. Based on [Spot-Professional](https://g
 - **Build**: esbuild (CJS bundle)
 - **Mobile**: Expo SDK (React Native)
 
+## Backend Architecture
+
+| Service | Port | Path |
+|---------|------|------|
+| API Server (Express) | 8080 | `/api` |
+| SpotD Web (Vite/React) | dynamic | `/` |
+| SpotD Mobile (Expo) | dynamic | `/mobile` |
+
+**Key backend paths:**
+- yt-dlp binary: `/home/runner/workspace/.pythonlibs/bin/yt-dlp`
+- ffmpeg: `/nix/store/zpa9hwqagqkkagh1ky21l6xf41mfq933-replit-runtime-path/bin`
+- Downloads temp dir: `/tmp/spotd-*`
+
+**Search strategy (stream/search endpoint):**
+1. Try Invidious API (10 instances, 6s timeout each)
+2. On failure → yt-dlp `ytsearch20:query` as fallback (always works)
+
 ## Features Implemented
 
 ### Web UI (artifacts/spotd)

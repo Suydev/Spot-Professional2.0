@@ -2,7 +2,9 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
 
-const YTDLP_PATH = path.resolve(process.cwd(), ".pythonlibs/bin/yt-dlp");
+const YTDLP_PATH =
+  process.env.YTDLP_PATH ||
+  "/home/runner/workspace/.pythonlibs/bin/yt-dlp";
 const FFMPEG_PATH = "/nix/store/zpa9hwqagqkkagh1ky21l6xf41mfq933-replit-runtime-path/bin";
 
 export interface YtdlpOptions {
@@ -73,6 +75,9 @@ export function downloadAudio(
     "--no-playlist",
     "--extract-audio",
     ...audioArgs,
+    "--embed-metadata",
+    "--embed-thumbnail",
+    "--add-metadata",
     "--ffmpeg-location",
     FFMPEG_PATH,
     "-o",
@@ -86,6 +91,44 @@ export function downloadAudio(
   return spawnYtdlp(args, opts.onProgress).then((out) => out.split("\n").pop() || "");
 }
 
+export function downloadAudioWithMeta(
+  searchQuery: string,
+  opts: YtdlpOptions & {
+    title?: string;
+    artist?: string;
+    album?: string;
+    coverUrl?: string;
+    trackNumber?: number;
+    year?: string;
+  }
+): Promise<string> {
+  const audioArgs = qualityToAudioArgs(opts.audioQuality || "mp3-320");
+  const outputTemplate = path.join(opts.outputDir, "%(title)s.%(ext)s");
+  const args = [
+    "--no-playlist",
+    "--extract-audio",
+    ...audioArgs,
+    "--embed-metadata",
+    "--embed-thumbnail",
+    "--add-metadata",
+    "--ffmpeg-location",
+    FFMPEG_PATH,
+  ];
+
+  if (opts.title) args.push("--replace-in-metadata", "title", ".*", opts.title);
+  if (opts.artist) args.push("--replace-in-metadata", "artist", ".*", opts.artist);
+  if (opts.album) args.push("--replace-in-metadata", "album", ".*", opts.album);
+
+  args.push(
+    "-o", outputTemplate,
+    "--no-progress",
+    "--quiet",
+    "--print", "after_move:filepath",
+    `ytsearch1:${searchQuery}`,
+  );
+  return spawnYtdlp(args, opts.onProgress).then((out) => out.split("\n").pop() || "");
+}
+
 export function downloadVideo(url: string, opts: YtdlpOptions): Promise<string> {
   const format = qualityToVideoFormat(opts.videoQuality || "720p");
   const outputTemplate = path.join(opts.outputDir, "%(title)s.%(ext)s");
@@ -95,6 +138,8 @@ export function downloadVideo(url: string, opts: YtdlpOptions): Promise<string> 
     format,
     "--merge-output-format",
     "mp4",
+    "--embed-metadata",
+    "--embed-thumbnail",
     "--ffmpeg-location",
     FFMPEG_PATH,
     "-o",

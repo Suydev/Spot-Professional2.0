@@ -7,7 +7,7 @@ import { downloadsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 import { fetchPlaylistTracks } from "./spotify";
-import { downloadAudio, downloadVideo, getYoutubePlaylistItems } from "./ytdlp";
+import { downloadAudio, downloadAudioWithMeta, downloadVideo, getYoutubePlaylistItems } from "./ytdlp";
 
 export interface TrackStatus {
   name: string;
@@ -124,9 +124,14 @@ async function runSpotifyDownload(session: DownloadSession) {
         const query = isPodcast
           ? `${track.artist} ${track.name} podcast`
           : `${track.artist} ${track.name}`;
-        const filePath = await downloadAudio(query, {
+        const filePath = await downloadAudioWithMeta(query, {
           audioQuality: session.audioQuality || "mp3-320",
           outputDir: tmpDir,
+          title: track.name,
+          artist: track.artist,
+          album: track.album || session.playlistName,
+          trackNumber: track.trackNumber,
+          year: track.year,
         });
         if (filePath) downloadedFiles.push(filePath);
         session.tracks[i].status = "done";

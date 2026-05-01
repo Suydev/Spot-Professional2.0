@@ -1,0 +1,189 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "CircularSp-Arab",
+      "role": "body"
+    },
+    {
+      "family": "CircularSp-Hebr",
+      "role": "body"
+    },
+    {
+      "family": "CircularSp-Cyrl",
+      "role": "body"
+    },
+    {
+      "family": "CircularSp-Grek",
+      "role": "body"
+    },
+    {
+      "family": "Helvetica Neue",
+      "role": "body"
+    }
+  ],
+  "colors": {
+    "primary": "#1ED760",
+    "secondary": "#9D968E",
+    "accent": "#1ED760",
+    "background": "#121212",
+    "textPrimary": "#B3B3B3",
+    "link": "#0000EE"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "CircularSp-Arab",
+      "heading": "CircularSp-Arab"
+    },
+    "fontStacks": {
+      "heading": [
+        "SpotifyMixUI",
+        "CircularSp-Arab",
+        "CircularSp-Hebr",
+        "CircularSp-Cyrl",
+        "CircularSp-Grek",
+        "CircularSp-Deva",
+        "Helvetica Neue",
+        "helvetica",
+        "arial",
+        "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN",
+        "Meiryo",
+        "MS Gothic"
+      ],
+      "body": [
+        "SpotifyMixUI",
+        "CircularSp-Arab",
+        "CircularSp-Hebr",
+        "CircularSp-Cyrl",
+        "CircularSp-Grek",
+        "CircularSp-Deva",
+        "Helvetica Neue",
+        "helvetica",
+        "arial",
+        "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN",
+        "Meiryo",
+        "MS Gothic"
+      ],
+      "paragraph": [
+        "SpotifyMixUI",
+        "CircularSp-Arab",
+        "CircularSp-Hebr",
+        "CircularSp-Cyrl",
+        "CircularSp-Grek",
+        "CircularSp-Deva",
+        "Helvetica Neue",
+        "helvetica",
+        "arial",
+        "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN",
+        "Meiryo",
+        "MS Gothic"
+      ]
+    },
+    "fontSizes": {
+      "h1": "16px",
+      "h2": "24px",
+      "body": "14px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "0px"
+  },
+  "components": {
+    "input": {
+      "background": "#1F1F1F",
+      "textColor": "#FFFFFF",
+      "borderColor": null,
+      "borderRadius": "500px",
+      "borderRadiusCorners": {
+        "topLeft": "500px",
+        "topRight": "500px",
+        "bottomRight": "500px",
+        "bottomLeft": "500px"
+      },
+      "shadow": "none"
+    },
+    "buttonPrimary": {
+      "background": "#000000",
+      "textColor": "#B3B3B3",
+      "borderRadius": "9999px",
+      "borderRadiusCorners": {
+        "topLeft": "9999px",
+        "topRight": "9999px",
+        "bottomRight": "9999px",
+        "bottomLeft": "9999px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "#FFFFFF",
+      "textColor": "#000000",
+      "borderRadius": "9999px",
+      "borderRadiusCorners": {
+        "topLeft": "9999px",
+        "topRight": "9999px",
+        "bottomRight": "9999px",
+        "bottomLeft": "9999px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "favicon": "File saved at: attached_assets/favicon.png",
+    "ogImage": null,
+    "logoHref": "File saved at: attached_assets/logoHref.html",
+    "logoAlt": "Spotify"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 1,
+    "reasoning": "Selected #1 because it is visible, matches the brand name 'Spotify', and links to the homepage, making it the primary brand logo.",
+    "confidence": 0.95,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "Sign up free",
+      "reasoning": "Button #0 is the primary CTA because it uses a dark background (#000000) which is more visually striking against the page's dark theme, making it stand out as a primary action."
+    },
+    "secondary": {
+      "index": 1,
+      "text": "Sign up free",
+      "reasoning": "Button #1 is the secondary CTA as it uses a light background (#FFFFFF), providing a contrast to the primary button and serving as a less prominent option."
+    },
+    "confidence": 0.9
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "high",
+    "targetAudience": "music enthusiasts"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.9,
+    "colors": 0.95,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 1,
+        "selectedLogoReasoning": "Selected #1 because it is visible, matches the brand name 'Spotify', and links to the homepage, making it the primary brand logo.",
+        "confidence": 0.95
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}
