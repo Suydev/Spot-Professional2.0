@@ -129,9 +129,9 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: npx expo prebuild --platform android --clean --no-install
 
-      - name: Install babel-preset-expo
+      - name: Add babel-preset-expo (pnpm)
         working-directory: ${{ env.WORKING_DIR }}
-        run: npm install --no-save babel-preset-expo
+        run: pnpm add -D babel-preset-expo --ignore-workspace-root-check
 
       - name: Cache Gradle
         uses: actions/cache@v4
