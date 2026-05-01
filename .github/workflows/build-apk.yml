@@ -73,7 +73,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tail -50
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Locate Debug APK
         id: locate-debug
@@ -165,14 +165,14 @@ jobs:
             -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
             -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" 2>&1 | tail -50
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
       - name: Build Release APK (unsigned fallback)
         if: steps.keystore.outputs.available == 'false'
         working-directory: ${{ env.WORKING_DIR }}/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon 2>&1 | tail -50
+          ./gradlew assembleRelease --no-daemon
 
       - name: Locate Release APK
         id: locate-release
