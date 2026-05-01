@@ -142,12 +142,12 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-        # If KEYSTORE_BASE64 secret is provided, use it for signing.
+      # If KEYSTORE_BASE64 secret is provided, use it for signing.
       # Otherwise, fall back to a temporary debug keystore (unsigned release).
       - name: Decode keystore (if available)
         id: keystore
         run: |
-        if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > /tmp/release.keystore
             echo "available=true" >> $GITHUB_OUTPUT
           else
