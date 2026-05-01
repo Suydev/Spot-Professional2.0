@@ -8,11 +8,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: "Build type (debug / release / both)"
-        required: false
-        default: "both"
 
 env:
   NODE_VERSION: "20"
@@ -21,99 +16,29 @@ env:
   WORKING_DIR: artifacts/spotd-mobile
 
 jobs:
-  # ── Debug APK (no signing required) ────────────────────────────────────────
-  build-debug:
-    name: "Debug APK"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Set up pnpm ${{ env.PNPM_VERSION }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-          run_install: false
-
-      - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: temurin
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Expo CLI
-        run: npm install -g @expo/cli@latest
-
-      - name: Pre-build Android (Expo Prebuild)
-        working-directory: ${{ env.WORKING_DIR }}
-        run: npx expo prebuild --platform android --clean --no-install
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-
-      - name: Build Debug APK
-        working-directory: ${{ env.WORKING_DIR }}/android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tail -50
-
-      - name: Locate Debug APK
-        id: locate-debug
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          APK=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -1)
-          echo "path=$APK" >> $GITHUB_OUTPUT
-          echo "Debug APK: $APK"
-
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: SpotD-debug-apk
-          path: ${{ env.WORKING_DIR }}/${{ steps.locate-debug.outputs.path }}
-          retention-days: 14
-          if-no-files-found: warn
-
-  # ── Release APK (signed with a keystore) ────────────────────────────────────
   build-release:
     name: "Release APK"
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Set up pnpm ${{ env.PNPM_VERSION }}
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
 
-      - name: Install workspace dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Set up Java ${{ env.JAVA_VERSION }}
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -123,106 +48,26 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Expo CLI
-        run: npm install -g @expo/cli@latest
+        run: npm install -g @expo/cli
 
-      - name: Pre-build Android (Expo Prebuild)
+      - name: Prebuild Android
         working-directory: ${{ env.WORKING_DIR }}
         run: npx expo prebuild --platform android --clean --no-install
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-
-      # If KEYSTORE_BASE64 secret is provided, use it for signing.
-      # Otherwise, fall back to a temporary debug keystore (unsigned release).
-      - name: Decode keystore (if available)
-        id: keystore
-        run: |
-          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > /tmp/release.keystore
-            echo "available=true" >> $GITHUB_OUTPUT
-          else
-            echo "available=false" >> $GITHUB_OUTPUT
-            echo "⚠️  KEYSTORE_BASE64 secret not set – building unsigned release APK"
-          fi
-
-      - name: Build Release APK (signed)
-        if: steps.keystore.outputs.available == 'true'
-        working-directory: ${{ env.WORKING_DIR }}/android
-        env:
-          KEYSTORE_PATH: /tmp/release.keystore
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon \
-            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
-            -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" 2>&1 | tail -50
-
-      - name: Build Release APK (unsigned fallback)
-        if: steps.keystore.outputs.available == 'false'
+      - name: Build Release APK
         working-directory: ${{ env.WORKING_DIR }}/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon 2>&1 | tail -50
+          ./gradlew assembleRelease
 
-      - name: Locate Release APK
-        id: locate-release
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
-          echo "path=$APK" >> $GITHUB_OUTPUT
-          echo "Release APK: $APK"
+      # 🔍 Show files (debug step)
+      - name: List APK files
+        run: find ${{ env.WORKING_DIR }} -name "*.apk"
 
+      # ✅ Upload EXACT APK (fixed)
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: SpotD-release-apk
-          path: ${{ env.WORKING_DIR }}/${{ steps.locate-release.outputs.path }}
+          path: artifacts/spotd-mobile/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
-          if-no-files-found: warn
-
-  # ── EAS Cloud Build (optional, requires EXPO_TOKEN secret) ──────────────────
-  build-eas:
-    name: "EAS Cloud Build (APK)"
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && vars.USE_EAS == 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-          run_install: false
-
-      - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@latest
-
-      - name: Build APK via EAS (preview profile)
-        working-directory: ${{ env.WORKING_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build \
-            --platform android \
-            --profile preview \
-            --non-interactive \
-            --no-wait
