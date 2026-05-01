@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/mobile/"
+title = "SpotD Mobile"
+version = "1.0.0"
+id = "artifacts/spotd-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/mobile/" ]
+localPort = 21054
+
+[services.development]
+run = "pnpm --filter @workspace/spotd-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/spotd-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/spotd-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "21054"
+BASE_PATH = "/mobile/"

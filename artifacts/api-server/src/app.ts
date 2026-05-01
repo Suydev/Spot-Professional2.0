@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { loadSessionsFromDb } from "./lib/downloadManager";
 
 const app: Express = express();
 
@@ -30,5 +31,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+loadSessionsFromDb().catch((err) =>
+  logger.error({ err }, "Failed to preload sessions from DB")
+);
 
 export default app;

@@ -3,20 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SpotD — Spotify & YouTube Downloader API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: downloads
+    description: Download session management
+  - name: settings
+    description: App settings
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +27,126 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /downloads:
+    get:
+      operationId: listDownloads
+      tags: [downloads]
+      summary: List all download sessions
+      responses:
+        "200":
+          description: List of downloads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Download"
+    post:
+      operationId: startDownload
+      tags: [downloads]
+      summary: Start a new download
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartDownloadInput"
+      responses:
+        "201":
+          description: Download started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Download"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /downloads/stats:
+    get:
+      operationId: getDownloadStats
+      tags: [downloads]
+      summary: Get download statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadStats"
+
+  /downloads/{id}:
+    get:
+      operationId: getDownload
+      tags: [downloads]
+      summary: Get a download session by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Download session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Download"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteDownload
+      tags: [downloads]
+      summary: Cancel and delete a download session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get app settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update app settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettingsInput"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +157,195 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    DownloadStatus:
+      type: string
+      enum:
+        - queued
+        - fetching_playlist
+        - downloading
+        - zipping
+        - done
+        - error
+        - cancelled
+
+    DownloadType:
+      type: string
+      enum:
+        - spotify
+        - youtube
+
+    AudioQuality:
+      type: string
+      enum:
+        - mp3-128
+        - mp3-192
+        - mp3-320
+        - flac
+
+    VideoQuality:
+      type: string
+      enum:
+        - 360p
+        - 480p
+        - 720p
+        - 1080p
+        - 1440p
+        - 2160p
+        - 4320p
+
+    Track:
+      type: object
+      properties:
+        name:
+          type: string
+        artist:
+          type: string
+        album:
+          type: string
+        coverUrl:
+          type: string
+        status:
+          type: string
+          enum: [queued, downloading, done, error]
+        error:
+          type: string
+      required:
+        - name
+        - artist
+        - status
+
+    Download:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/DownloadType"
+        status:
+          $ref: "#/components/schemas/DownloadStatus"
+        url:
+          type: string
+        playlistName:
+          type: string
+        totalTracks:
+          type: integer
+        completedTracks:
+          type: integer
+        errorMessage:
+          type: string
+        audioQuality:
+          $ref: "#/components/schemas/AudioQuality"
+        videoQuality:
+          $ref: "#/components/schemas/VideoQuality"
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Track"
+        zipReady:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - status
+        - url
+        - totalTracks
+        - completedTracks
+        - zipReady
+        - createdAt
+
+    StartDownloadInput:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Spotify playlist/album URL or YouTube URL
+        type:
+          $ref: "#/components/schemas/DownloadType"
+        audioQuality:
+          $ref: "#/components/schemas/AudioQuality"
+        videoQuality:
+          $ref: "#/components/schemas/VideoQuality"
+      required:
+        - url
+        - type
+
+    DownloadStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        completed:
+          type: integer
+        failed:
+          type: integer
+        totalTracksDownloaded:
+          type: integer
+      required:
+        - total
+        - active
+        - completed
+        - failed
+        - totalTracksDownloaded
+
+    Settings:
+      type: object
+      properties:
+        audioQuality:
+          $ref: "#/components/schemas/AudioQuality"
+        videoQuality:
+          $ref: "#/components/schemas/VideoQuality"
+        chunkSize:
+          type: integer
+          minimum: 1
+          maximum: 50
+        maxSongs:
+          type: integer
+          minimum: 1
+          maximum: 200
+        embedMetadata:
+          type: boolean
+      required:
+        - audioQuality
+        - videoQuality
+        - chunkSize
+        - maxSongs
+        - embedMetadata
+
+    UpdateSettingsInput:
+      type: object
+      properties:
+        audioQuality:
+          $ref: "#/components/schemas/AudioQuality"
+        videoQuality:
+          $ref: "#/components/schemas/VideoQuality"
+        chunkSize:
+          type: integer
+          minimum: 1
+          maximum: 50
+        maxSongs:
+          type: integer
+          minimum: 1
+          maximum: 200
+        embedMetadata:
+          type: boolean
