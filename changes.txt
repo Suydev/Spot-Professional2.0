@@ -1,49 +1,31 @@
-# SpotD — GitHub Changes Log
-  Generated: 2026-05-02
+# Changes Made to GitHub Repo: Suydev/Spot-Professional2.0
 
-  ## Round 1 — CI Build Pipeline Setup
-  - Created .github/workflows/build-apk.yml
-    * GitHub Actions workflow to build debug and release APKs on every push to main
-    * Steps: Checkout -> Node 20 -> pnpm 10 -> Install deps -> Java 17 -> Android SDK
-      -> Expo prebuild -> Gradle cache -> Keystore decode -> Build APK -> Upload artifact
+  ## Round 1 — Build Pipeline Fixes (2026-05-01)
+  - .github/workflows/build-apk.yml: Fixed yaml indentation, added babel-preset-expo install step using pnpm
 
-  ## Round 2 — Build Pipeline Fixes
-  - Fixed YAML indentation errors in build-apk.yml (multiple iterations)
-  - Added "pnpm add -D babel-preset-expo" step to workflow
-    * pnpm strict mode does not hoist transitive deps; Metro needs it directly accessible
-  - Fixed metro.config.js -- removed disableHierarchicalLookup: true
-    * This flag blocked Metro from traversing pnpm virtual store symlinks
-    * Metro can now find transitive packages like @expo/metro-runtime
+  ## Round 2 — Metro Config Fix (2026-05-01)
+  - artifacts/spotd-mobile/metro.config.js: Removed disableHierarchicalLookup:true (breaks pnpm virtual store symlink resolution). Added explanatory comment.
 
-  ## Round 3 — Download Bug Fixes (2026-05-02)
-  Problem: Music downloading crashed with "object not defined" (ReferenceError in Hermes)
+  ## Round 3 — Hermes/React Native Runtime Fixes (2026-05-02)
+  - artifacts/spotd-mobile/utils/cobalt.ts: Replaced AbortSignal.timeout() (unavailable in Hermes JS engine) with manual AbortController + setTimeout. Added multi-instance Cobalt fallback (3 instances) to bypass auth requirement.
+  - artifacts/spotd-mobile/utils/invidious.ts: Same AbortSignal.timeout fix with manual AbortController.
+  - artifacts/spotd-mobile/utils/spotify.ts: Fixed operator precedence bug in fetchSpotifyCollection — name was always returning 'Playlist' or 'Album' instead of the actual playlist/album title.
 
-  Root Causes Found & Fixed:
+  ## Round 4 — Piped API Primary Source + Cobalt v9/v10 Multi-Tier Fallback (2026-05-02)
+  Root cause: Previous cobalt.ts was sending Cobalt v10 request format (downloadMode:"audio") to ALL
+  instances, but community instances run Cobalt v9 (different endpoint /api/json, different request
+  body). This caused ALL instances to fail with 400 errors, including api.cobalt.tools which now
+  requires JWT auth.
 
-  1. AbortSignal.timeout() not in React Native Hermes (cobalt.ts, invidious.ts)
-     - AbortSignal.timeout() is a Web API added in Chrome 103 / Node 17.3
-     - Hermes (React Native's JS engine) does NOT implement this static method
-     - Fix: replaced with manual AbortController + setTimeout helper: withTimeout(ms)
-     - Files affected: cobalt.ts, invidious.ts
+  ### artifacts/spotd-mobile/utils/cobalt.ts (complete rewrite):
+  - Tier 1 — Piped API (5 instances: pipedapi.kavin.rocks, pipedapi.adminforge.de, pipedapi.tokhmi.xyz, api.piped.yt, pipedapi.reallyaweso.me): Proxied YouTube audio streams, no auth needed. Returns M4A (preferred for Android compatibility) or WEBM.
+  - Tier 2 — Cobalt v9 (4 instances: cobalt.api.timelessnesses.me, cobalt.tools.exozy.me, cobalt.privacydev.net, co.wuk.sh): Uses legacy POST /api/json endpoint with {isAudioOnly:true, aFormat:"mp3", audioBitrate} body. No auth required on most instances.
+  - Tier 3 — Cobalt v10 (3 instances: cobalt.canine.tools, cobalt.hectabit.org, api.cobalt.tools): Uses new POST / endpoint with {downloadMode:"audio", audioFormat:"mp3"} body. Last resort.
+  - extractVideoId() helper added to parse videoId from YouTube URLs for Piped.
+  - getCobaltVideoUrl() skips Piped (video-only streams) and uses Cobalt v9 → v10.
 
-  2. Cobalt API now requires authentication (cobalt.ts)
-     - api.cobalt.tools requires "Authorization: Api-Key" header since late 2024
-     - Without it the API returns errors, blocking all downloads
-     - Fix: added multiple public Cobalt instance fallback list, tried in order:
-         1. cobalt.api.timelessnesses.me
-         2. cobalt.tools.exozy.me
-         3. api.cobalt.tools (official, as last resort)
-     - Also handles "picker" response type from newer Cobalt API versions
-
-  3. JavaScript operator precedence bug in spotify.ts (fetchSpotifyCollection)
-     - Bug:  entity.name || entity.title || kind === "playlist" ? "Playlist" : "Album"
-     - JS parsed as: (entity.name || entity.title || kind==="playlist") ? "Playlist" : "Album"
-     - Result: collection name was ALWAYS "Playlist" or "Album", real name ignored
-     - Fix:  entity.name || entity.title || (kind === "playlist" ? "Playlist" : "Album")
-
-  Files Changed in Round 3:
-    artifacts/spotd-mobile/utils/cobalt.ts     -- multi-instance fallback + AbortController fix
-    artifacts/spotd-mobile/utils/invidious.ts  -- AbortController fix
-    artifacts/spotd-mobile/utils/spotify.ts    -- operator precedence fix
-    artifacts/spotd-mobile/metro.config.js     -- removed disableHierarchicalLookup
+  ### artifacts/spotd-mobile/contexts/DownloadContext.tsx (3 extension fixes):
+  - Line 141: Spotify track downloads — replaced hardcoded .mp3 extension with cobalt.filename.split(".").pop() so M4A files from Piped get the correct .m4a extension.
+  - Line 286: YouTube single video/audio downloads — same fix.
+  - Line 389: YouTube playlist downloads — same fix.
   
