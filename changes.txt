@@ -1,0 +1,49 @@
+# SpotD — GitHub Changes Log
+  Generated: 2026-05-02
+
+  ## Round 1 — CI Build Pipeline Setup
+  - Created .github/workflows/build-apk.yml
+    * GitHub Actions workflow to build debug and release APKs on every push to main
+    * Steps: Checkout -> Node 20 -> pnpm 10 -> Install deps -> Java 17 -> Android SDK
+      -> Expo prebuild -> Gradle cache -> Keystore decode -> Build APK -> Upload artifact
+
+  ## Round 2 — Build Pipeline Fixes
+  - Fixed YAML indentation errors in build-apk.yml (multiple iterations)
+  - Added "pnpm add -D babel-preset-expo" step to workflow
+    * pnpm strict mode does not hoist transitive deps; Metro needs it directly accessible
+  - Fixed metro.config.js -- removed disableHierarchicalLookup: true
+    * This flag blocked Metro from traversing pnpm virtual store symlinks
+    * Metro can now find transitive packages like @expo/metro-runtime
+
+  ## Round 3 — Download Bug Fixes (2026-05-02)
+  Problem: Music downloading crashed with "object not defined" (ReferenceError in Hermes)
+
+  Root Causes Found & Fixed:
+
+  1. AbortSignal.timeout() not in React Native Hermes (cobalt.ts, invidious.ts)
+     - AbortSignal.timeout() is a Web API added in Chrome 103 / Node 17.3
+     - Hermes (React Native's JS engine) does NOT implement this static method
+     - Fix: replaced with manual AbortController + setTimeout helper: withTimeout(ms)
+     - Files affected: cobalt.ts, invidious.ts
+
+  2. Cobalt API now requires authentication (cobalt.ts)
+     - api.cobalt.tools requires "Authorization: Api-Key" header since late 2024
+     - Without it the API returns errors, blocking all downloads
+     - Fix: added multiple public Cobalt instance fallback list, tried in order:
+         1. cobalt.api.timelessnesses.me
+         2. cobalt.tools.exozy.me
+         3. api.cobalt.tools (official, as last resort)
+     - Also handles "picker" response type from newer Cobalt API versions
+
+  3. JavaScript operator precedence bug in spotify.ts (fetchSpotifyCollection)
+     - Bug:  entity.name || entity.title || kind === "playlist" ? "Playlist" : "Album"
+     - JS parsed as: (entity.name || entity.title || kind==="playlist") ? "Playlist" : "Album"
+     - Result: collection name was ALWAYS "Playlist" or "Album", real name ignored
+     - Fix:  entity.name || entity.title || (kind === "playlist" ? "Playlist" : "Album")
+
+  Files Changed in Round 3:
+    artifacts/spotd-mobile/utils/cobalt.ts     -- multi-instance fallback + AbortController fix
+    artifacts/spotd-mobile/utils/invidious.ts  -- AbortController fix
+    artifacts/spotd-mobile/utils/spotify.ts    -- operator precedence fix
+    artifacts/spotd-mobile/metro.config.js     -- removed disableHierarchicalLookup
+  
