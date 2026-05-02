@@ -135,7 +135,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
         const dir = `${FileSystem.documentDirectory}spotd/`;
         await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-        const safeName = `${track.name.replace(/[^a-z0-9]/gi, "_")}_${track.id}.mp3`;
+        const audioExt = cobalt.filename.split(".").pop()?.toLowerCase() ?? "mp3";
+        const safeName = `${track.name.replace(/[^a-z0-9]/gi, "_")}_${track.id}.${audioExt}`;
         const dest = dir + safeName;
 
         await FileSystem.downloadAsync(cobalt.url, dest);
@@ -279,7 +280,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
           const dir = `${FileSystem.documentDirectory}spotd/`;
           await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-          const ext = settings.downloadMode === "video" ? "mp4" : "mp3";
+          const ext = cobalt.filename.split(".").pop()?.toLowerCase()
+            ?? (settings.downloadMode === "video" ? "mp4" : "mp3");
           const safeName = `${info.title.replace(/[^a-z0-9]/gi, "_")}_${parsed.id}.${ext}`;
           const dest = dir + safeName;
 
@@ -381,7 +383,8 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
                 const dir = `${FileSystem.documentDirectory}spotd/`;
                 await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-                const ext = settings.downloadMode === "video" ? "mp4" : "mp3";
+                const ext = cobalt.filename.split(".").pop()?.toLowerCase()
+                  ?? (settings.downloadMode === "video" ? "mp4" : "mp3");
                 const safeName = `${track.name.replace(/[^a-z0-9]/gi, "_")}_${track.id}.${ext}`;
                 const dest = dir + safeName;
 
